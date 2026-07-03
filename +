@@ -1,0 +1,11 @@
+from loguru import logger
+
+logger.remove()
+logger.add(lambda msg: print(msg, end=""))
+
+def main():
+    logger.info("Prime T Genesis STARTED")
+    logger.info("System initialized successfully")
+
+if __name__ == "__main__":
+    main()
