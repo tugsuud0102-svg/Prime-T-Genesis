@@ -1,5 +1,6 @@
 from core.data_loader import get_candles
 from core.order_manager import place_order
+from core.logger import write_log
 
 from indicators.ema import calculate_ema
 from indicators.rsi import calculate_rsi
@@ -19,7 +20,6 @@ def main():
     df["ATR"] = calculate_atr(df)
 
     last = df.iloc[-1]
-
     entry = last["close"]
     atr = last["ATR"]
 
@@ -45,29 +45,24 @@ def main():
     )
 
     if buy_signal:
-        print("SIGNAL: STRONG BUY")
+        sl = entry - (atr * 2)
+        tp = entry + (atr * 3)
 
-        place_order(
-            signal="BUY",
-            entry=entry,
-            sl=entry - (atr * 2),
-            tp=entry + (atr * 3),
-            volume=0.01,
-        )
+        print("SIGNAL: STRONG BUY")
+        place_order("BUY", entry, sl, tp, volume=0.01)
+        write_log(f"BUY | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}")
 
     elif sell_signal:
-        print("SIGNAL: STRONG SELL")
+        sl = entry + (atr * 2)
+        tp = entry - (atr * 3)
 
-        place_order(
-            signal="SELL",
-            entry=entry,
-            sl=entry + (atr * 2),
-            tp=entry - (atr * 3),
-            volume=0.01,
-        )
+        print("SIGNAL: STRONG SELL")
+        place_order("SELL", entry, sl, tp, volume=0.01)
+        write_log(f"SELL | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}")
 
     else:
         print("SIGNAL: NO TRADE")
+        write_log("NO TRADE")
 
 
 if __name__ == "__main__":
