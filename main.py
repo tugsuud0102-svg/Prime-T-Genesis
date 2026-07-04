@@ -36,7 +36,7 @@ def main():
 
     buy_signal = (
         last["close"] > last["EMA20"] > last["EMA50"] > last["EMA200"]
-        and last["RSI"] >= 50  # test threshold
+        and last["RSI"] >= 55
     )
 
     sell_signal = (
