@@ -16,4 +16,9 @@ def calculate_lot_size(balance, risk_percent, entry, sl):
     if lot < 0.01:
         lot = 0.01
 
+    MAX_LOT = 0.05
+
+    if lot > MAX_LOT:
+        lot = MAX_LOT
+
     return lot
