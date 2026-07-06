@@ -1,6 +1,8 @@
 import MetaTrader5 as mt5
 from datetime import datetime
 
+from core.telegram_alert import send_telegram
+
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 SYMBOL = "GOLD"
 
@@ -76,6 +78,20 @@ def place_order(signal, entry, sl, tp, volume=0.01):
             f"Volume={result.volume} | Price={result.price} | SL={sl:.2f} | TP={tp:.2f}"
         )
 
+        msg = (
+            "🚀 PRIME T GENESIS\n\n"
+            f"✅ ORDER EXECUTED\n"
+            f"Signal: {signal}\n"
+            f"Symbol: {SYMBOL}\n"
+            f"Volume: {result.volume}\n"
+            f"Price: {result.price:.2f}\n"
+            f"SL: {sl:.2f}\n"
+            f"TP: {tp:.2f}\n"
+            f"Deal: {result.deal}\n"
+            f"Order: {result.order}"
+        )
+        send_telegram(msg)
+
     else:
         print("❌ ORDER NOT EXECUTED")
         print(f"Retcode : {result.retcode}")
@@ -85,6 +101,12 @@ def place_order(signal, entry, sl, tp, volume=0.01):
             f"FAILED | {signal} | Retcode={result.retcode} | Comment={result.comment}"
         )
 
-    print("========================\n")
+        send_telegram(
+            f"⚠️ PRIME T ORDER FAILED\n\n"
+            f"Signal: {signal}\n"
+            f"Retcode: {result.retcode}\n"
+            f"Comment: {result.comment}"
+        )
 
+    print("========================\n")
     mt5.shutdown()
