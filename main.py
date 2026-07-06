@@ -2,6 +2,7 @@ from core.data_loader import get_candles
 from core.order_manager import place_order
 from core.logger import write_log
 from core.position_manager import can_open_new_position
+from core.trend_filter import h1_trend
 
 from indicators.ema import calculate_ema
 from indicators.rsi import calculate_rsi
@@ -24,16 +25,18 @@ def main():
 
     entry = last["close"]
     atr = last["ATR"]
+    trend = h1_trend(SYMBOL)
 
     print("=" * 50)
-    print("Prime T Genesis v1.4 - DEMO LIVE")
-    print(f"Symbol: {SYMBOL}")
-    print(f"Close : {last['close']:.2f}")
-    print(f"EMA20 : {last['EMA20']:.2f}")
-    print(f"EMA50 : {last['EMA50']:.2f}")
-    print(f"EMA200: {last['EMA200']:.2f}")
-    print(f"RSI   : {last['RSI']:.2f}")
-    print(f"ATR   : {last['ATR']:.2f}")
+    print("Prime T Genesis v1.5 - DEMO LIVE")
+    print(f"Symbol  : {SYMBOL}")
+    print(f"Close   : {last['close']:.2f}")
+    print(f"EMA20   : {last['EMA20']:.2f}")
+    print(f"EMA50   : {last['EMA50']:.2f}")
+    print(f"EMA200  : {last['EMA200']:.2f}")
+    print(f"RSI     : {last['RSI']:.2f}")
+    print(f"ATR     : {last['ATR']:.2f}")
+    print(f"H1 Trend: {trend}")
     print("=" * 50)
 
     buy_signal = (
@@ -46,7 +49,7 @@ def main():
         and last["RSI"] <= 45
     )
 
-    if buy_signal:
+    if buy_signal and trend == "BULLISH":
         print("SIGNAL: STRONG BUY")
 
         if not can_open_new_position(SYMBOL, max_positions=2):
@@ -59,7 +62,7 @@ def main():
         place_order("BUY", entry, sl, tp, volume=0.01)
         write_log(f"BUY | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}")
 
-    elif sell_signal:
+    elif sell_signal and trend == "BEARISH":
         print("SIGNAL: STRONG SELL")
 
         if not can_open_new_position(SYMBOL, max_positions=2):
@@ -75,17 +78,24 @@ def main():
     else:
         reasons = []
 
-        if not (last["close"] > last["EMA20"]):
-            reasons.append("Close is not above EMA20")
+        if buy_signal and trend != "BULLISH":
+            reasons.append("BUY blocked because H1 trend is not bullish")
 
-        if not (last["EMA20"] > last["EMA50"]):
-            reasons.append("EMA20 is not above EMA50")
+        if sell_signal and trend != "BEARISH":
+            reasons.append("SELL blocked because H1 trend is not bearish")
 
-        if not (last["EMA50"] > last["EMA200"]):
-            reasons.append("EMA50 is not above EMA200")
+        if not buy_signal and not sell_signal:
+            if not (last["close"] > last["EMA20"]):
+                reasons.append("Close is not above EMA20")
 
-        if not (last["RSI"] >= 55):
-            reasons.append("RSI is below 55")
+            if not (last["EMA20"] > last["EMA50"]):
+                reasons.append("EMA20 is not above EMA50")
+
+            if not (last["EMA50"] > last["EMA200"]):
+                reasons.append("EMA50 is not above EMA200")
+
+            if not (last["RSI"] >= 55):
+                reasons.append("RSI is below 55")
 
         print("SIGNAL: NO TRADE")
         print("Reasons:")
