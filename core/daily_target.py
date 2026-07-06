@@ -3,8 +3,8 @@ import MetaTrader5 as mt5
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
+DAILY_TARGET = 50.0
 BALANCE_FILE = "data/daily_start_balance.txt"
-MAX_DAILY_LOSS_PERCENT = 10.0
 
 
 def get_start_balance():
@@ -12,10 +12,20 @@ def get_start_balance():
         with open(BALANCE_FILE, "r") as f:
             return float(f.read())
 
-    return None
+    account = mt5.account_info()
+
+    if account is None:
+        return None
+
+    start_balance = account.balance
+
+    with open(BALANCE_FILE, "w") as f:
+        f.write(str(start_balance))
+
+    return start_balance
 
 
-def equity_protection():
+def daily_target_hit():
     if not mt5.initialize(path=MT5_PATH):
         print("MT5 initialize failed:", mt5.last_error())
         return False
@@ -32,22 +42,12 @@ def equity_protection():
         mt5.shutdown()
         return False
 
-    equity = account.equity
-
-    drawdown_percent = (
-        (start_balance - equity)
-        / start_balance
-    ) * 100
+    profit = account.balance - start_balance
 
     print(
-        f"Equity: {equity:.2f} | "
-        f"Drawdown: {drawdown_percent:.2f}%"
+        f"Daily Profit: ${profit:.2f} / ${DAILY_TARGET:.2f}"
     )
 
     mt5.shutdown()
 
-    if drawdown_percent >= MAX_DAILY_LOSS_PERCENT:
-        print("EQUITY PROTECTION TRIGGERED")
-        return True
-
-    return False
+    return profit >= DAILY_TARGET

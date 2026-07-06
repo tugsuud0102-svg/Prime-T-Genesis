@@ -1,22 +1,25 @@
-print("=" * 50)
-print("Prime T Genesis v1.5")
-print("Mode: DEMO LIVE")
-print("Timeframe: M15")
-print("=" * 50)
 import time
 
 from main import main
 from core.trailing_stop import move_sl_to_break_even
 from core.equity_guard import equity_protection
+from core.daily_target import daily_target_hit
 
 
 print("=" * 50)
-print("Prime T Genesis Live Bot Started")
+print("Prime T Genesis v1.7")
 print("Mode: DEMO LIVE")
+print("Timeframe: M15")
 print("=" * 50)
 
 while True:
     try:
+        print("\nChecking daily profit target...")
+        if daily_target_hit():
+            print("DAILY TARGET REACHED")
+            print("BOT STOPPED")
+            break
+
         print("\nChecking equity protection...")
         if equity_protection():
             print("BOT STOPPED - MAX LOSS REACHED")
@@ -31,5 +34,5 @@ while True:
     except Exception as e:
         print("ERROR:", e)
 
-    print("\nSleeping 30 seconds...")
+    print("\nSleeping 900 seconds...")
     time.sleep(900)
