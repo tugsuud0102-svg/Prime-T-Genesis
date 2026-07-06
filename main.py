@@ -1,8 +1,11 @@
+import MetaTrader5 as mt5
+
 from core.data_loader import get_candles
 from core.order_manager import place_order
 from core.logger import write_log
 from core.position_manager import can_open_new_position
 from core.trend_filter import h1_trend
+from core.risk_manager import calculate_lot_size
 
 from indicators.ema import calculate_ema
 from indicators.rsi import calculate_rsi
@@ -10,6 +13,21 @@ from indicators.atr import calculate_atr
 
 
 SYMBOL = "GOLD"
+RISK_PERCENT = 1.0
+
+
+def get_account_balance():
+    if not mt5.initialize():
+        print("MT5 initialize failed:", mt5.last_error())
+        return None
+
+    account = mt5.account_info()
+    mt5.shutdown()
+
+    if account is None:
+        return None
+
+    return account.balance
 
 
 def main():
@@ -28,7 +46,7 @@ def main():
     trend = h1_trend(SYMBOL)
 
     print("=" * 50)
-    print("Prime T Genesis v1.5 - DEMO LIVE")
+    print("Prime T Genesis v1.6 - DEMO LIVE")
     print(f"Symbol  : {SYMBOL}")
     print(f"Close   : {last['close']:.2f}")
     print(f"EMA20   : {last['EMA20']:.2f}")
@@ -59,8 +77,18 @@ def main():
         sl = entry - (atr * 2)
         tp = entry + (atr * 3)
 
-        place_order("BUY", entry, sl, tp, volume=0.01)
-        write_log(f"BUY | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}")
+        balance = get_account_balance()
+        if balance is None:
+            print("Could not get account balance")
+            return
+
+        volume = calculate_lot_size(balance, RISK_PERCENT, entry, sl)
+        print(f"Dynamic Volume: {volume}")
+
+        place_order("BUY", entry, sl, tp, volume=volume)
+        write_log(
+            f"BUY | Volume={volume} | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}"
+        )
 
     elif sell_signal and trend == "BEARISH":
         print("SIGNAL: STRONG SELL")
@@ -72,8 +100,18 @@ def main():
         sl = entry + (atr * 2)
         tp = entry - (atr * 3)
 
-        place_order("SELL", entry, sl, tp, volume=0.01)
-        write_log(f"SELL | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}")
+        balance = get_account_balance()
+        if balance is None:
+            print("Could not get account balance")
+            return
+
+        volume = calculate_lot_size(balance, RISK_PERCENT, entry, sl)
+        print(f"Dynamic Volume: {volume}")
+
+        place_order("SELL", entry, sl, tp, volume=volume)
+        write_log(
+            f"SELL | Volume={volume} | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}"
+        )
 
     else:
         reasons = []
