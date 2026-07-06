@@ -1,17 +1,31 @@
 import MetaTrader5 as mt5
+from datetime import datetime
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+SYMBOL = "GOLD"
+
+
+def write_trade_log(message):
+    with open("logs/trades.log", "a", encoding="utf-8") as f:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"[{now}] {message}\n")
 
 
 def place_order(signal, entry, sl, tp, volume=0.01):
     if not mt5.initialize(path=MT5_PATH):
-        print("MT5 initialize failed:", mt5.last_error())
+        error = mt5.last_error()
+        print("❌ MT5 initialize failed:", error)
+        write_trade_log(f"MT5 INIT FAILED | {error}")
         return
 
-    symbol = "GOLD"
-    mt5.symbol_select(symbol, True)
+    mt5.symbol_select(SYMBOL, True)
+    tick = mt5.symbol_info_tick(SYMBOL)
 
-    tick = mt5.symbol_info_tick(symbol)
+    if tick is None:
+        print("❌ Tick data not found")
+        write_trade_log("TICK DATA NOT FOUND")
+        mt5.shutdown()
+        return
 
     if signal == "BUY":
         order_type = mt5.ORDER_TYPE_BUY
@@ -20,13 +34,13 @@ def place_order(signal, entry, sl, tp, volume=0.01):
         order_type = mt5.ORDER_TYPE_SELL
         price = tick.bid
     else:
-        print("Invalid signal")
+        print("❌ Invalid signal")
         mt5.shutdown()
         return
 
     request = {
         "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
+        "symbol": SYMBOL,
         "volume": volume,
         "type": order_type,
         "price": price,
@@ -41,8 +55,36 @@ def place_order(signal, entry, sl, tp, volume=0.01):
 
     result = mt5.order_send(request)
 
-    print("\n===== LIVE DEMO ORDER =====")
-    print(result)
-    print("===========================\n")
+    print("\n===== ORDER RESULT =====")
+
+    if result is None:
+        print("❌ ORDER FAILED: No result")
+        write_trade_log("ORDER FAILED | No result")
+
+    elif result.retcode == mt5.TRADE_RETCODE_DONE:
+        print("✅ ORDER EXECUTED")
+        print(f"Signal : {signal}")
+        print(f"Deal   : {result.deal}")
+        print(f"Order  : {result.order}")
+        print(f"Volume : {result.volume}")
+        print(f"Price  : {result.price}")
+        print(f"SL     : {sl:.2f}")
+        print(f"TP     : {tp:.2f}")
+
+        write_trade_log(
+            f"EXECUTED | {signal} | Deal={result.deal} | Order={result.order} | "
+            f"Volume={result.volume} | Price={result.price} | SL={sl:.2f} | TP={tp:.2f}"
+        )
+
+    else:
+        print("❌ ORDER NOT EXECUTED")
+        print(f"Retcode : {result.retcode}")
+        print(f"Comment : {result.comment}")
+
+        write_trade_log(
+            f"FAILED | {signal} | Retcode={result.retcode} | Comment={result.comment}"
+        )
+
+    print("========================\n")
 
     mt5.shutdown()

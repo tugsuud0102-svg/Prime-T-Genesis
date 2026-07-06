@@ -26,7 +26,7 @@ def main():
     atr = last["ATR"]
 
     print("=" * 50)
-    print("Prime T Genesis v1.3 - DEMO LIVE")
+    print("Prime T Genesis v1.4 - DEMO LIVE")
     print(f"Symbol: {SYMBOL}")
     print(f"Close : {last['close']:.2f}")
     print(f"EMA20 : {last['EMA20']:.2f}")
@@ -47,7 +47,6 @@ def main():
     )
 
     if buy_signal:
-
         print("SIGNAL: STRONG BUY")
 
         if not can_open_new_position(SYMBOL, max_positions=2):
@@ -57,20 +56,10 @@ def main():
         sl = entry - (atr * 2)
         tp = entry + (atr * 3)
 
-        place_order(
-            signal="BUY",
-            entry=entry,
-            sl=sl,
-            tp=tp,
-            volume=0.01
-        )
-
-        write_log(
-            f"BUY | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}"
-        )
+        place_order("BUY", entry, sl, tp, volume=0.01)
+        write_log(f"BUY | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}")
 
     elif sell_signal:
-
         print("SIGNAL: STRONG SELL")
 
         if not can_open_new_position(SYMBOL, max_positions=2):
@@ -80,21 +69,30 @@ def main():
         sl = entry + (atr * 2)
         tp = entry - (atr * 3)
 
-        place_order(
-            signal="SELL",
-            entry=entry,
-            sl=sl,
-            tp=tp,
-            volume=0.01
-        )
-
-        write_log(
-            f"SELL | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}"
-        )
+        place_order("SELL", entry, sl, tp, volume=0.01)
+        write_log(f"SELL | Entry={entry:.2f} | SL={sl:.2f} | TP={tp:.2f}")
 
     else:
+        reasons = []
+
+        if not (last["close"] > last["EMA20"]):
+            reasons.append("Close is not above EMA20")
+
+        if not (last["EMA20"] > last["EMA50"]):
+            reasons.append("EMA20 is not above EMA50")
+
+        if not (last["EMA50"] > last["EMA200"]):
+            reasons.append("EMA50 is not above EMA200")
+
+        if not (last["RSI"] >= 55):
+            reasons.append("RSI is below 55")
+
         print("SIGNAL: NO TRADE")
-        write_log("NO TRADE")
+        print("Reasons:")
+        for reason in reasons:
+            print("-", reason)
+
+        write_log("NO TRADE | " + ", ".join(reasons))
 
 
 if __name__ == "__main__":
