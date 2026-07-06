@@ -27,12 +27,12 @@ for i in range(200, len(df) - 10):
 
     buy_signal = (
         row["close"] > row["EMA20"] > row["EMA50"] > row["EMA200"]
-        and row["RSI"] >= 55
+        and row["RSI"] >= 60
     )
 
     sell_signal = (
         row["close"] < row["EMA20"] < row["EMA50"] < row["EMA200"]
-        and row["RSI"] <= 45
+        and row["RSI"] <= 40
     )
 
     result = None
