@@ -15,6 +15,9 @@ from indicators.atr import calculate_atr
 SYMBOL = "GOLD"
 RISK_PERCENT = 1.0
 
+BUY_RSI_LEVEL = 60
+SELL_RSI_LEVEL = 40
+
 
 def get_account_balance():
     if not mt5.initialize():
@@ -46,7 +49,7 @@ def main():
     trend = h1_trend(SYMBOL)
 
     print("=" * 50)
-    print("Prime T Genesis v1.6 - DEMO LIVE")
+    print("Prime T Genesis v1.9 - DEMO LIVE")
     print(f"Symbol  : {SYMBOL}")
     print(f"Close   : {last['close']:.2f}")
     print(f"EMA20   : {last['EMA20']:.2f}")
@@ -59,12 +62,12 @@ def main():
 
     buy_signal = (
         last["close"] > last["EMA20"] > last["EMA50"] > last["EMA200"]
-        and last["RSI"] >= 55
+        and last["RSI"] >= BUY_RSI_LEVEL
     )
 
     sell_signal = (
         last["close"] < last["EMA20"] < last["EMA50"] < last["EMA200"]
-        and last["RSI"] <= 45
+        and last["RSI"] <= SELL_RSI_LEVEL
     )
 
     if buy_signal and trend == "BULLISH":
@@ -132,8 +135,8 @@ def main():
             if not (last["EMA50"] > last["EMA200"]):
                 reasons.append("EMA50 is not above EMA200")
 
-            if not (last["RSI"] >= 55):
-                reasons.append("RSI is below 55")
+            if not (last["RSI"] >= BUY_RSI_LEVEL):
+                reasons.append(f"RSI is below {BUY_RSI_LEVEL}")
 
         print("SIGNAL: NO TRADE")
         print("Reasons:")
