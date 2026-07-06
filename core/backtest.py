@@ -1,3 +1,5 @@
+import MetaTrader5 as mt5
+
 from core.data_loader import get_candles
 from indicators.ema import calculate_ema
 from indicators.rsi import calculate_rsi
@@ -13,13 +15,22 @@ max_drawdown = 0.0
 wins = 0
 losses = 0
 
-df = get_candles("GOLD", count=1000)
+df = get_candles("GOLD", timeframe=mt5.TIMEFRAME_M15, count=1000)
+h1 = get_candles("GOLD", timeframe=mt5.TIMEFRAME_H1, count=300)
 
 df["EMA20"] = calculate_ema(df, 20)
 df["EMA50"] = calculate_ema(df, 50)
 df["EMA200"] = calculate_ema(df, 200)
 df["RSI"] = calculate_rsi(df)
 df["ATR"] = calculate_atr(df)
+
+h1["EMA50"] = calculate_ema(h1, 50)
+h1["EMA200"] = calculate_ema(h1, 200)
+
+h1_last = h1.iloc[-1]
+h1_trend = "BULLISH" if h1_last["EMA50"] > h1_last["EMA200"] else "BEARISH"
+
+print(f"H1 Trend Used: {h1_trend}")
 
 for i in range(200, len(df) - 10):
     row = df.iloc[i]
@@ -28,11 +39,13 @@ for i in range(200, len(df) - 10):
     buy_signal = (
         row["close"] > row["EMA20"] > row["EMA50"] > row["EMA200"]
         and row["RSI"] >= 60
+        and h1_trend == "BULLISH"
     )
 
     sell_signal = (
         row["close"] < row["EMA20"] < row["EMA50"] < row["EMA200"]
         and row["RSI"] <= 40
+        and h1_trend == "BEARISH"
     )
 
     result = None
