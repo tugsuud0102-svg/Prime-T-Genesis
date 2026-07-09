@@ -1,5 +1,6 @@
 import MetaTrader5 as mt5
 from datetime import datetime
+from pathlib import Path
 
 from core.telegram_alert import send_telegram
 
@@ -8,6 +9,7 @@ SYMBOL = "GOLD"
 
 
 def write_trade_log(message):
+    Path("logs").mkdir(exist_ok=True)
     with open("logs/trades.log", "a", encoding="utf-8") as f:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         f.write(f"[{now}] {message}\n")

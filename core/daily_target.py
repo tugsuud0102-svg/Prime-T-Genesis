@@ -1,15 +1,22 @@
 import os
+from datetime import date
 import MetaTrader5 as mt5
+
+from config.settings import DAILY_TARGET
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
-DAILY_TARGET = 50.0
-BALANCE_FILE = "data/daily_start_balance.txt"
+
+def balance_file():
+    return f"data/daily_start_balance_{date.today().isoformat()}.txt"
 
 
 def get_start_balance():
-    if os.path.exists(BALANCE_FILE):
-        with open(BALANCE_FILE, "r") as f:
+    filename = balance_file()
+    os.makedirs("data", exist_ok=True)
+
+    if os.path.exists(filename):
+        with open(filename, "r") as f:
             return float(f.read())
 
     account = mt5.account_info()
@@ -19,7 +26,7 @@ def get_start_balance():
 
     start_balance = account.balance
 
-    with open(BALANCE_FILE, "w") as f:
+    with open(filename, "w") as f:
         f.write(str(start_balance))
 
     return start_balance
@@ -42,7 +49,7 @@ def daily_target_hit():
         mt5.shutdown()
         return False
 
-    profit = account.balance - start_balance
+    profit = account.equity - start_balance
 
     print(
         f"Daily Profit: ${profit:.2f} / ${DAILY_TARGET:.2f}"

@@ -1,15 +1,21 @@
 import os
+from datetime import date
 import MetaTrader5 as mt5
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
-BALANCE_FILE = "data/daily_start_balance.txt"
 MAX_DAILY_LOSS_PERCENT = 10.0
 
 
+def balance_file():
+    return f"data/daily_start_balance_{date.today().isoformat()}.txt"
+
+
 def get_start_balance():
-    if os.path.exists(BALANCE_FILE):
-        with open(BALANCE_FILE, "r") as f:
+    filename = balance_file()
+
+    if os.path.exists(filename):
+        with open(filename, "r") as f:
             return float(f.read())
 
     return None

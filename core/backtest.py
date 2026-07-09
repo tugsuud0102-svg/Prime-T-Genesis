@@ -4,9 +4,18 @@ from core.data_loader import get_candles
 from indicators.ema import calculate_ema
 from indicators.rsi import calculate_rsi
 from indicators.atr import calculate_atr
+from config.settings import (
+    BUY_RSI_MAX,
+    BUY_RSI_MIN,
+    RISK_PERCENT,
+    SELL_RSI_MAX,
+    SELL_RSI_MIN,
+    SL_ATR_MULTIPLIER,
+    SYMBOL,
+    TP_ATR_MULTIPLIER,
+)
 
 START_BALANCE = 100.0
-RISK_PERCENT = 0.5
 
 balance = START_BALANCE
 peak_balance = START_BALANCE
@@ -15,8 +24,8 @@ max_drawdown = 0.0
 wins = 0
 losses = 0
 
-df = get_candles("GOLD", timeframe=mt5.TIMEFRAME_M15, count=1000)
-h1 = get_candles("GOLD", timeframe=mt5.TIMEFRAME_H1, count=300)
+df = get_candles(SYMBOL, timeframe=mt5.TIMEFRAME_M15, count=1000)
+h1 = get_candles(SYMBOL, timeframe=mt5.TIMEFRAME_H1, count=300)
 
 df["EMA20"] = calculate_ema(df, 20)
 df["EMA50"] = calculate_ema(df, 50)
@@ -38,13 +47,13 @@ for i in range(200, len(df) - 10):
 
     buy_signal = (
         row["close"] > row["EMA20"] > row["EMA50"] > row["EMA200"]
-        and row["RSI"] >= 60
+        and BUY_RSI_MIN <= row["RSI"] <= BUY_RSI_MAX
         and h1_trend == "BULLISH"
     )
 
     sell_signal = (
         row["close"] < row["EMA20"] < row["EMA50"] < row["EMA200"]
-        and row["RSI"] <= 40
+        and SELL_RSI_MIN <= row["RSI"] <= SELL_RSI_MAX
         and h1_trend == "BEARISH"
     )
 
@@ -52,8 +61,8 @@ for i in range(200, len(df) - 10):
 
     if buy_signal:
         entry = row["close"]
-        sl = entry - (row["ATR"] * 2)
-        tp = entry + (row["ATR"] * 3)
+        sl = entry - (row["ATR"] * SL_ATR_MULTIPLIER)
+        tp = entry + (row["ATR"] * TP_ATR_MULTIPLIER)
 
         for _, candle in future.iterrows():
             if candle["low"] <= sl:
@@ -65,8 +74,8 @@ for i in range(200, len(df) - 10):
 
     elif sell_signal:
         entry = row["close"]
-        sl = entry + (row["ATR"] * 2)
-        tp = entry - (row["ATR"] * 3)
+        sl = entry + (row["ATR"] * SL_ATR_MULTIPLIER)
+        tp = entry - (row["ATR"] * TP_ATR_MULTIPLIER)
 
         for _, candle in future.iterrows():
             if candle["high"] >= sl:

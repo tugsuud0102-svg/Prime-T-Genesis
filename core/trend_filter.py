@@ -11,12 +11,16 @@ def h1_trend(symbol="GOLD"):
         count=300
     )
 
+    df["EMA20"] = calculate_ema(df, 20)
     df["EMA50"] = calculate_ema(df, 50)
     df["EMA200"] = calculate_ema(df, 200)
 
-    last = df.iloc[-1]
+    last = df.iloc[-2]
 
-    if last["EMA50"] > last["EMA200"]:
+    if last["close"] > last["EMA20"] > last["EMA50"] > last["EMA200"]:
         return "BULLISH"
 
-    return "BEARISH"
+    if last["close"] < last["EMA20"] < last["EMA50"] < last["EMA200"]:
+        return "BEARISH"
+
+    return "NEUTRAL"
