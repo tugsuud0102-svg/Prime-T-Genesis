@@ -7,13 +7,7 @@ from config.settings import TELEGRAM_COMMANDS_ENABLED, TELEGRAM_OFFSET_FILE
 from core.bot_state import is_paused, pause_bot, resume_bot
 from core.close_all import close_all_positions
 from core.dashboard import build_dashboard_message
-from core.telegram_alert import (
-    BOT_TOKEN,
-    CHAT_ID,
-    answer_callback_query,
-    edit_telegram_message,
-    send_telegram,
-)
+from core.telegram_alert import BOT_TOKEN, CHAT_ID, send_telegram
 from core.telegram_menu import MAIN_TEXT, MAIN_KEYBOARD, CLOSE_KEYBOARD, BACK_KEYBOARD
 from trade_stats.analyzer import format_performance_summary
 
@@ -34,10 +28,7 @@ def _write_offset(offset):
 
 
 def _reply_for_command(text):
-    parts = text.strip().split()
-    if not parts:
-        return None
-    command = parts[0].split("@", 1)[0].lower()
+    command = text.strip().split()[0].lower()
 
     if command == "/menu":
         return MAIN_TEXT.format(state="PAUSED" if is_paused() else "RUNNING")
@@ -97,8 +88,8 @@ def handle_telegram_commands():
     response.raise_for_status()
     data = response.json()
 
-    processed = 0
     for update in data.get("result", []):
+        _write_offset(update["update_id"] + 1)
         callback = update.get("callback_query")
         message = update.get("message", {})
         if callback:
@@ -106,33 +97,18 @@ def handle_telegram_commands():
         chat = message.get("chat", {})
 
         if str(chat.get("id")) != str(CHAT_ID):
-            if callback:
-                answer_callback_query(callback.get("id"), "Unauthorized chat")
-            _write_offset(update["update_id"] + 1)
             continue
 
-        # Callback queries are new updates even when the menu message is old.
-        # Apply the stale guard only to ordinary messages.
-        if not callback and int(time()) - int(message.get("date", 0)) > 300:
-            _write_offset(update["update_id"] + 1)
+        update_date = message.get("date", 0)
+        if int(time()) - int(update_date) > 300:
             continue
 
         if callback:
-            answer_callback_query(callback.get("id"))
             reply, markup = _callback_reply(callback.get("data", ""))
-            if reply:
-                edited = edit_telegram_message(message.get("message_id"), reply, markup)
-                if not edited:
-                    send_telegram(reply, markup)
-            _write_offset(update["update_id"] + 1)
-            processed += 1
+            if reply: send_telegram(reply, markup)
             continue
 
         text = message.get("text", "")
         reply = _reply_for_command(text)
         if reply:
-            command = text.strip().split()[0].split("@", 1)[0].lower() if text.strip() else ""
-            send_telegram(reply, MAIN_KEYBOARD if command == "/menu" else None)
-        _write_offset(update["update_id"] + 1)
-        processed += 1
-    return processed
+            send_telegram(reply, MAIN_KEYBOARD if text.strip().lower()=="/menu" else None)

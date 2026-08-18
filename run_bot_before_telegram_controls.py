@@ -1,5 +1,4 @@
 import time
-import threading
 
 from main import main
 from core.break_even_engine import manage_break_even
@@ -13,7 +12,7 @@ from core.forexfactory import update_news_blackout
 from core.dashboard import send_daily_dashboard_if_due
 from core.telegram_commands import handle_telegram_commands
 from trade_stats.closed_trade_sync import sync_closed_trades
-from config.settings import LOOP_SECONDS, TELEGRAM_POLL_SECONDS, TRADING_MODE, TIMEFRAME_NAME
+from config.settings import LOOP_SECONDS, TRADING_MODE, TIMEFRAME_NAME
 
 
 print("=" * 50)
@@ -29,20 +28,7 @@ def _safe_call(name, function, *args, **kwargs):
         print(f"{name} skipped: {exc}")
         return None
 
-def _telegram_poll_loop(stop_event):
-    while not stop_event.is_set():
-        _safe_call("Telegram commands", handle_telegram_commands)
-        stop_event.wait(TELEGRAM_POLL_SECONDS)
-
 def run_forever():
- stop_event = threading.Event()
- telegram_thread = threading.Thread(
-     target=_telegram_poll_loop,
-     args=(stop_event,),
-     name="prime-t-telegram",
-     daemon=True,
- )
- telegram_thread.start()
  while True:
     try:
         print("\nUpdating ForexFactory news...")
@@ -50,6 +36,12 @@ def run_forever():
             _safe_call("ForexFactory update", update_news_blackout)
         except Exception as e:
             print("ForexFactory update skipped:", e)
+
+        print("\nChecking Telegram commands...")
+        try:
+            _safe_call("Telegram commands", handle_telegram_commands)
+        except Exception as e:
+            print("Telegram command check skipped:", e)
 
         print("\nChecking daily Telegram dashboard...")
         try:
