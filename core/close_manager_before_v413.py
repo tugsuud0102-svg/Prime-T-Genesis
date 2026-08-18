@@ -1,6 +1,4 @@
 import MetaTrader5 as mt5
-from config.settings import BOT_MAGIC
-from core.mt5_actions import close_position as safe_close_position
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
@@ -18,17 +16,6 @@ def close_position(ticket):
         return
 
     position = positions[0]
-    if getattr(position, "magic", None) != BOT_MAGIC:
-        print(f"Position ignored (not BOT_MAGIC): {ticket}")
-        mt5.shutdown()
-        return
-    result = safe_close_position(position, comment="Prime T close position")
-    print("\n===== CLOSE RESULT =====")
-    print(result)
-    print("========================\n")
-    mt5.shutdown()
-    return result
-    # Legacy request retained below for recovery reference; unreachable by design.
     symbol = position.symbol
     volume = position.volume
 

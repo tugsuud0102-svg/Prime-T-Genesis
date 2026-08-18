@@ -9,7 +9,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 
-def send_telegram(message):
+def send_telegram(message, reply_markup=None):
     if not BOT_TOKEN or not CHAT_ID:
         print("Telegram config missing")
         return
@@ -20,6 +20,9 @@ def send_telegram(message):
         "chat_id": CHAT_ID,
         "text": message
     }
+    if reply_markup:
+        import json
+        data["reply_markup"] = json.dumps(reply_markup)
 
     try:
         requests.post(url, data=data, timeout=10)

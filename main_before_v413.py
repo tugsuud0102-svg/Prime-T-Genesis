@@ -69,7 +69,7 @@ def bearish_candle(candle):
     return candle["close"] < candle["open"]
 
 
-def legacy_v21_main():
+def main():
     if is_paused():
         reason = "BOT PAUSED"
         print("SIGNAL: NO TRADE")
@@ -276,39 +276,5 @@ def legacy_v21_main():
         write_log("NO TRADE | " + ", ".join(reasons))
 
 
-def main(execute_orders=False):
-    """Run one v4.1.3 cycle. Execution is opt-in for safe CLI diagnostics."""
-    from core.signal_orchestrator import run_signal_cycle
-    try:
-        snapshot, decision = run_signal_cycle(SYMBOL)
-    except Exception as exc:
-        print("=" * 62)
-        print("Prime T Genesis v4.1.3 - MODULAR SIGNAL ENGINE")
-        print(f"Mode      : {TRADING_MODE}")
-        print(f"Symbol    : {SYMBOL}")
-        print(f"Data      : unavailable ({exc})")
-        print("=" * 62)
-        print("SIGNAL: NO_TRADE")
-        return None
-    if execute_orders and decision.signal in ("BUY", "SELL"):
-        if is_paused() or not can_open_new_position(SYMBOL, max_positions=MAX_POSITIONS):
-            return decision
-        balance = get_account_balance()
-        if balance is None:
-            return decision
-        volume = calculate_lot_size(balance, RISK_PERCENT, decision.entry, decision.sl, symbol=SYMBOL)
-        from core.execution_engine import execute_decision
-        execute_decision(decision, volume, {
-            "score": decision.score, "rating": decision.rating,
-            "rsi": snapshot.rsi, "atr": snapshot.atr, "spread": snapshot.spread,
-            "bos": snapshot.bos["detected"], "choch": snapshot.choch["detected"],
-            "mss": snapshot.mss["detected"], "fvg": snapshot.fvg["detected"],
-            "order_block": snapshot.order_block["detected"],
-            "supply_demand": snapshot.supply_demand["detected"],
-            "liquidity": snapshot.liquidity_sweep["detected"],
-            "mtf": snapshot.mtf_confluence["confirmed"],
-        })
-    return decision
-
 if __name__ == "__main__":
-    main(execute_orders=False)
+    main()
