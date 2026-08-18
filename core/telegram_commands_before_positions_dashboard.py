@@ -14,8 +14,7 @@ from core.telegram_alert import (
     edit_telegram_message,
     send_telegram,
 )
-from core.telegram_menu import MAIN_TEXT, MAIN_KEYBOARD, CLOSE_KEYBOARD, BACK_KEYBOARD, POSITIONS_KEYBOARD
-from core.telegram_positions import build_live_positions_dashboard
+from core.telegram_menu import MAIN_TEXT, MAIN_KEYBOARD, CLOSE_KEYBOARD, BACK_KEYBOARD
 from trade_stats.analyzer import format_performance_summary
 
 
@@ -77,11 +76,10 @@ def _callback_reply(data):
     if data=="resume": resume_bot(); return "Bot resumed", MAIN_KEYBOARD
     if data=="status": return _reply_for_command("/status"), BACK_KEYBOARD
     if data=="statistics": return format_performance_summary(), BACK_KEYBOARD
-    if data in ("positions","positions_refresh"): return build_live_positions_dashboard(), POSITIONS_KEYBOARD
     if data=="close_all": return "Close all BOT_MAGIC positions?", CLOSE_KEYBOARD
     if data=="close_all_confirm": close_all_positions(); return "Close all command executed", BACK_KEYBOARD
     if data=="back": return MAIN_TEXT.format(state="PAUSED" if is_paused() else "RUNNING"), MAIN_KEYBOARD
-    if data in ("journal","settings"): return f"{data.title()} view is available as a clean placeholder.", BACK_KEYBOARD
+    if data in ("positions","journal","settings"): return f"{data.title()} view is available as a clean placeholder.", BACK_KEYBOARD
     return None, None
 
 
