@@ -1,12 +1,11 @@
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 from core.mt5_actions import own_positions, close_position
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
 
 def close_all_positions():
-    if not initialize_mt5():
+    if not mt5.initialize(path=MT5_PATH):
         print(mt5.last_error())
         return
 

@@ -1,13 +1,12 @@
 from pathlib import Path
 import math
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 from config.settings import PARTIAL_CLOSE_ENABLED,PARTIAL_CLOSE_TRIGGER_R,PARTIAL_CLOSE_PERCENT
 from core.mt5_actions import own_positions,close_position
 from core.telegram_alert import send_telegram
 STATE=Path("data/partial_close")
 def manage_partial_close():
-    if not PARTIAL_CLOSE_ENABLED or not initialize_mt5():return 0
+    if not PARTIAL_CLOSE_ENABLED or not mt5.initialize():return 0
     STATE.mkdir(parents=True,exist_ok=True); count=0
     for p in own_positions():
         marker=STATE/f"{p.ticket}.done"

@@ -1,5 +1,4 @@
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 
 from core.data_loader import get_candles
 from core.order_manager import place_order
@@ -35,7 +34,7 @@ from indicators.atr import calculate_atr
 
 
 def get_account_balance():
-    if not initialize_mt5():
+    if not mt5.initialize():
         print("MT5 initialize failed:", mt5.last_error())
         return None
 
@@ -49,7 +48,7 @@ def get_account_balance():
 
 
 def get_symbol_spread(symbol):
-    if not initialize_mt5():
+    if not mt5.initialize():
         print("MT5 initialize failed:", mt5.last_error())
         return None
 

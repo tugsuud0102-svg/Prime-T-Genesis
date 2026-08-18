@@ -1,7 +1,6 @@
 import os
 from datetime import date, datetime
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 
 from config.settings import DAILY_TARGET
 
@@ -34,7 +33,7 @@ def get_start_balance():
 
 
 def daily_target_hit():
-    if not initialize_mt5():
+    if not mt5.initialize(path=MT5_PATH):
         print("MT5 initialize failed:", mt5.last_error())
         return False
 

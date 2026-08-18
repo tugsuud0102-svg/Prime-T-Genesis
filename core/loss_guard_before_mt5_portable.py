@@ -1,7 +1,6 @@
 from datetime import datetime, time
 
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 
 from config.settings import (
     BOT_MAGIC,
@@ -15,7 +14,7 @@ MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
 
 def consecutive_losses_today():
-    if not initialize_mt5():
+    if not mt5.initialize(path=MT5_PATH):
         print("MT5 initialize failed:", mt5.last_error())
         return 0
 

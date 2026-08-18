@@ -1,5 +1,4 @@
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 from datetime import datetime
 from pathlib import Path
 
@@ -20,7 +19,7 @@ def legacy_place_order(signal, entry, sl, tp, volume=0.01, context=None):
     if TRADING_MODE != "DEMO":
         print("Order blocked: TRADING_MODE must remain DEMO")
         return None
-    if not initialize_mt5():
+    if not mt5.initialize(path=MT5_PATH):
         error = mt5.last_error()
         print("❌ MT5 initialize failed:", error)
         write_trade_log(f"MT5 INIT FAILED | {error}")
@@ -124,7 +123,7 @@ def place_order(signal, entry, sl, tp, volume=0.01, context=None):
     if TRADING_MODE != "DEMO":
         print("❌ Order blocked: TRADING_MODE must remain DEMO")
         return None
-    if not initialize_mt5():
+    if not mt5.initialize(path=MT5_PATH):
         print("❌ MT5 initialize failed:", mt5.last_error())
         return None
     try:

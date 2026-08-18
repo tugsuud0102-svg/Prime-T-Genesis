@@ -1,10 +1,9 @@
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 from config.settings import BREAK_EVEN_ENABLED,BREAK_EVEN_TRIGGER_R,BREAK_EVEN_OFFSET_POINTS,BOT_MAGIC
 from core.mt5_actions import own_positions,modify_sl
 from core.telegram_alert import send_telegram
 def manage_break_even():
-    if not BREAK_EVEN_ENABLED or not initialize_mt5():return 0
+    if not BREAK_EVEN_ENABLED or not mt5.initialize():return 0
     changed=0
     for p in own_positions():
         risk=abs(p.price_open-p.sl) if p.sl else 0

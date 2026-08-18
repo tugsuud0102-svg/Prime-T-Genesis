@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
 import MetaTrader5 as mt5
-from core.mt5_connection import initialize_mt5
 from core.data_loader import get_candles
 from indicators.ema import calculate_ema
 from indicators.rsi import calculate_rsi
@@ -25,7 +24,7 @@ class MarketSnapshot:
     symbol:str; dataframe:Any; completed_candles:Any; latest_completed_candle:Any; previous_candle:Any; entry:float; atr:float; rsi:float; spread:float|None; h1_trend:str; h4_trend:str; bias:str; bos:dict; choch:dict; mss:dict; premium_discount:dict; liquidity_sweep:dict; liquidity_pools:dict; fvg:dict; order_block:dict; supply_demand:dict; support_resistance:dict; price_action:dict; ema_slope:dict; mtf_confluence:dict
 
 def _trend(symbol,timeframe,count=250):
-    if not initialize_mt5(): return "NONE"
+    if not mt5.initialize(): return "NONE"
     rates=mt5.copy_rates_from_pos(symbol,timeframe,0,count); mt5.shutdown()
     if rates is None or len(rates)<201:return "NONE"
     import pandas as pd
@@ -41,7 +40,7 @@ def build_market_snapshot(symbol):
     last,prev=completed.iloc[-1],completed.iloc[-2]; atr=float(last.ATR); price=float(last.close)
     bias="BULLISH" if last.close>last.EMA20>last.EMA50>last.EMA200 else "BEARISH" if last.close<last.EMA20<last.EMA50<last.EMA200 else "NONE"
     h1=_trend(symbol,mt5.TIMEFRAME_H1); h4=_trend(symbol,mt5.TIMEFRAME_H4)
-    if not initialize_mt5(): spread=None
+    if not mt5.initialize(): spread=None
     else:
         tick=mt5.symbol_info_tick(symbol); spread=abs(tick.ask-tick.bid) if tick else None; mt5.shutdown()
     bos=detect_bos(completed); choch=detect_choch(completed,bias); mss=detect_mss(completed,bias,atr)
