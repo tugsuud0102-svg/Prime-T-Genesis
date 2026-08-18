@@ -123,12 +123,7 @@ def handle_telegram_commands():
             answer_callback_query(callback.get("id"))
             reply, markup = _callback_reply(callback.get("data", ""))
             if reply:
-                edited = edit_telegram_message(
-                    message.get("message_id"),
-                    reply,
-                    markup,
-                    chat_id=chat.get("id"),
-                )
+                edited = edit_telegram_message(message.get("message_id"), reply, markup)
                 if not edited:
                     send_telegram(reply, markup)
             _write_offset(update["update_id"] + 1)
