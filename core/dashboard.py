@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta
 from pathlib import Path
 
 import MetaTrader5 as mt5
+from core.mt5_connection import initialize_mt5
 
 from config.settings import BOT_MAGIC, SYMBOL, TELEGRAM_REPORT_FILE
 from core.daily_target import DAILY_TARGET, get_start_balance
@@ -56,7 +57,7 @@ def _next_news():
 
 
 def build_dashboard_message():
-    if not mt5.initialize(path=MT5_PATH):
+    if not initialize_mt5():
         return f"Prime T Genesis\nMT5 error: {mt5.last_error()}"
 
     account = mt5.account_info()

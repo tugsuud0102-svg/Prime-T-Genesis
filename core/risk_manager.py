@@ -1,4 +1,5 @@
 import MetaTrader5 as mt5
+from core.mt5_connection import initialize_mt5
 
 from config.settings import SYMBOL
 
@@ -12,7 +13,7 @@ def calculate_lot_size(balance, risk_percent, entry, sl, symbol=SYMBOL):
     if stop_distance == 0:
         return 0.01
 
-    if not mt5.initialize(path=MT5_PATH):
+    if not initialize_mt5():
         print("MT5 initialize failed:", mt5.last_error())
         return 0.01
 

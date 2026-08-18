@@ -1,6 +1,7 @@
 import os
 from datetime import date
 import MetaTrader5 as mt5
+from core.mt5_connection import initialize_mt5
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
@@ -22,7 +23,7 @@ def get_start_balance():
 
 
 def equity_protection():
-    if not mt5.initialize(path=MT5_PATH):
+    if not initialize_mt5():
         print("MT5 initialize failed:", mt5.last_error())
         return False
 

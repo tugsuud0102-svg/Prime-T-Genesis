@@ -1,6 +1,7 @@
 import os
-from datetime import date
+from datetime import date, datetime
 import MetaTrader5 as mt5
+from core.mt5_connection import initialize_mt5
 
 from config.settings import DAILY_TARGET
 
@@ -33,27 +34,20 @@ def get_start_balance():
 
 
 def daily_target_hit():
-    if not mt5.initialize(path=MT5_PATH):
+    if not initialize_mt5():
         print("MT5 initialize failed:", mt5.last_error())
         return False
 
-    account = mt5.account_info()
-
-    if account is None:
-        mt5.shutdown()
-        return False
-
-    start_balance = get_start_balance()
-
-    if start_balance is None:
-        mt5.shutdown()
-        return False
-
-    profit = account.equity - start_balance
-
-    print(
-        f"Daily Profit: ${profit:.2f} / ${DAILY_TARGET:.2f}"
+    start = datetime.combine(date.today(), datetime.min.time())
+    deals = mt5.history_deals_get(start, datetime.now()) or []
+    exit_values = {getattr(mt5, "DEAL_ENTRY_OUT", 1), getattr(mt5, "DEAL_ENTRY_OUT_BY", 3)}
+    from config.settings import BOT_MAGIC
+    profit = sum(
+        float(getattr(d, "profit", 0)) + float(getattr(d, "commission", 0)) + float(getattr(d, "swap", 0))
+        for d in deals
+        if getattr(d, "magic", None) == BOT_MAGIC and getattr(d, "entry", None) in exit_values
     )
+    print(f"Daily Realized P/L: ${profit:.2f} / ${DAILY_TARGET:.2f}")
 
     mt5.shutdown()
 

@@ -1,4 +1,5 @@
 import MetaTrader5 as mt5
+from core.mt5_connection import initialize_mt5
 from datetime import datetime, timedelta
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
@@ -7,7 +8,7 @@ SYMBOL = "GOLD"
 
 
 def show_history_stats(days=30):
-    if not mt5.initialize(path=MT5_PATH):
+    if not initialize_mt5():
         print(mt5.last_error())
         return
 

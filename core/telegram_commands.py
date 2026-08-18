@@ -7,7 +7,16 @@ from config.settings import TELEGRAM_COMMANDS_ENABLED, TELEGRAM_OFFSET_FILE
 from core.bot_state import is_paused, pause_bot, resume_bot
 from core.close_all import close_all_positions
 from core.dashboard import build_dashboard_message
-from core.telegram_alert import BOT_TOKEN, CHAT_ID, send_telegram
+from core.telegram_alert import (
+    BOT_TOKEN,
+    CHAT_ID,
+    answer_callback_query,
+    edit_telegram_message,
+    send_telegram,
+)
+from core.telegram_menu import MAIN_TEXT, MAIN_KEYBOARD, CLOSE_KEYBOARD, BACK_KEYBOARD, POSITIONS_KEYBOARD
+from core.telegram_positions import build_live_positions_dashboard
+from trade_stats.analyzer import format_performance_summary
 
 
 def _read_offset():
@@ -26,7 +35,13 @@ def _write_offset(offset):
 
 
 def _reply_for_command(text):
-    command = text.strip().split()[0].lower()
+    parts = text.strip().split()
+    if not parts:
+        return None
+    command = parts[0].split("@", 1)[0].lower()
+
+    if command == "/menu":
+        return MAIN_TEXT.format(state="PAUSED" if is_paused() else "RUNNING")
 
     if command == "/status":
         state = "PAUSED" if is_paused() else "RUNNING"
@@ -34,6 +49,9 @@ def _reply_for_command(text):
 
     if command == "/today":
         return build_dashboard_message()
+
+    if command in ("/stats", "/performance", "/week"):
+        return format_performance_summary()
 
     if command == "/pause":
         pause_bot()
@@ -50,9 +68,21 @@ def _reply_for_command(text):
         return "Close all command executed"
 
     if command == "/help":
-        return "Commands: /status /today /pause /resume /close_all confirm"
+        return "Commands: /menu /status /today /week /stats /performance /pause /resume /close_all confirm /help"
 
     return None
+
+def _callback_reply(data):
+    if data=="pause": pause_bot(); return "Bot paused", MAIN_KEYBOARD
+    if data=="resume": resume_bot(); return "Bot resumed", MAIN_KEYBOARD
+    if data=="status": return _reply_for_command("/status"), BACK_KEYBOARD
+    if data=="statistics": return format_performance_summary(), BACK_KEYBOARD
+    if data in ("positions","positions_refresh"): return build_live_positions_dashboard(), POSITIONS_KEYBOARD
+    if data=="close_all": return "Close all BOT_MAGIC positions?", CLOSE_KEYBOARD
+    if data=="close_all_confirm": close_all_positions(); return "Close all command executed", BACK_KEYBOARD
+    if data=="back": return MAIN_TEXT.format(state="PAUSED" if is_paused() else "RUNNING"), MAIN_KEYBOARD
+    if data in ("journal","settings"): return f"{data.title()} view is available as a clean placeholder.", BACK_KEYBOARD
+    return None, None
 
 
 def handle_telegram_commands():
@@ -69,18 +99,47 @@ def handle_telegram_commands():
     response.raise_for_status()
     data = response.json()
 
+    processed = 0
     for update in data.get("result", []):
-        _write_offset(update["update_id"] + 1)
+        callback = update.get("callback_query")
         message = update.get("message", {})
+        if callback:
+            message = callback.get("message", {})
         chat = message.get("chat", {})
 
         if str(chat.get("id")) != str(CHAT_ID):
+            if callback:
+                answer_callback_query(callback.get("id"), "Unauthorized chat")
+            _write_offset(update["update_id"] + 1)
             continue
 
-        if int(time()) - int(message.get("date", 0)) > 300:
+        # Callback queries are new updates even when the menu message is old.
+        # Apply the stale guard only to ordinary messages.
+        if not callback and int(time()) - int(message.get("date", 0)) > 300:
+            _write_offset(update["update_id"] + 1)
+            continue
+
+        if callback:
+            answer_callback_query(callback.get("id"))
+            reply, markup = _callback_reply(callback.get("data", ""))
+            if reply:
+                edited = edit_telegram_message(
+                    message.get("message_id"),
+                    reply,
+                    markup,
+                    chat_id=chat.get("id"),
+                )
+                if not edited:
+                    send_telegram(reply, markup)
+            _write_offset(update["update_id"] + 1)
+            processed += 1
             continue
 
         text = message.get("text", "")
         reply = _reply_for_command(text)
         if reply:
-            send_telegram(reply)
+            command = text.strip().split()[0].split("@", 1)[0].lower() if text.strip() else ""
+            send_telegram(reply, MAIN_KEYBOARD if command == "/menu" else None)
+        _write_offset(update["update_id"] + 1)
+        processed += 1
+    return processed
